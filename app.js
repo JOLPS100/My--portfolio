@@ -284,12 +284,13 @@ function copyText(text){
   return navigator.clipboard?.writeText(text);
 }
 
-const email = 'yourname@email.com';
+// Used for the client-side demo (mailto + copy-to-clipboard)
+const CONTACT_EMAIL = 'jolpsjonathan@gmail.com';
 const phone = '+000 000 0000';
 
 $('#emailLink')?.addEventListener('click', async () => {
   try{
-    await copyText(email);
+    await copyText(CONTACT_EMAIL);
     setStatus('Copied email to clipboard ✅');
   } catch{
     setStatus('Copy failed. Please copy manually.');
@@ -307,7 +308,7 @@ $('#phoneLink')?.addEventListener('click', async () => {
 
 $('#copyEmailBtn')?.addEventListener('click', async () => {
   try{
-    await copyText(email);
+    await copyText(CONTACT_EMAIL);
     setStatus('Copied email to clipboard ✅');
   } catch{
     setStatus('Copy failed. Please copy manually.');
@@ -363,7 +364,7 @@ form?.addEventListener('submit', (e) => {
   // Demo: create a mailto link instead of backend
   const subject = encodeURIComponent(`[Portfolio] ${data.topic} from ${data.name}`);
   const body = encodeURIComponent(`Name: ${data.name}\nEmail: ${data.email}\n\nMessage:\n${data.message}`);
-  const mailto = `mailto:${email}?subject=${subject}&body=${body}`;
+  const mailto = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
 
   if(status){
     status.textContent = 'Opening your email client…';
