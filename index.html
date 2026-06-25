@@ -425,6 +425,22 @@
             <div class="divider"></div>
 
           <form class="card contact-form" id="contactForm" novalidate>
+            <input type="hidden" id="preferredChannel" name="preferredChannel" value="email" />
+
+            <div class="contact-method" aria-label="Choose how to contact me">
+              <div class="contact-method__label">Choose contact method</div>
+              <div class="contact-method__icons" role="radiogroup" aria-label="Preferred contact method">
+                <button type="button" class="contact-icon" data-channel="email" aria-checked="true" role="radio" aria-label="Email">✉️</button>
+                <button type="button" class="contact-icon" data-channel="whatsapp" aria-checked="false" role="radio" aria-label="WhatsApp">💬</button>
+                <a class="contact-icon contact-icon--link" data-channel="github" href="https://github.com/jolps100" target="_blank" rel="noreferrer" aria-label="GitHub" role="radio" aria-checked="false">⌂</a>
+                <a class="contact-icon contact-icon--link" data-channel="facebook" href="#" target="_blank" rel="noreferrer" aria-label="Facebook" role="radio" aria-checked="false">f</a>
+                <a class="contact-icon contact-icon--link" data-channel="x" href="https://x.com/Jolps5" target="_blank" rel="noreferrer" aria-label="X" role="radio" aria-checked="false">𝕏</a>
+              </div>
+              <div class="form-footer" style="margin-top: 10px;">
+                <span class="muted">Selected: <strong><span id="preferredChannelLabel">Email</span></strong></span>
+              </div>
+            </div>
+
             <h3 class="card__title">Message me</h3>
 
             <div class="form-row">
