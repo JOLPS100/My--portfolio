@@ -221,7 +221,6 @@ const modalContent = {
   }
 };
 
-
 let lastFocused = null;
 
 function openModal(key){
@@ -321,9 +320,36 @@ function setStatus(msg){
   statusEl.textContent = msg;
 }
 
-// ----- Contact form demo submit -----
+// ----- Contact form (Formspree + channel selection) -----
 const form = $('#contactForm');
-const status = $('.form-status');
+const formStatus = $('#contactForm')?.querySelector('.form-status') || $('.form-status');
+
+const FORMSPREE_ENDPOINT = 'https://formspree.io/f/xwvdlrna';
+
+
+const preferredChannelInput = $('#preferredChannel');
+const preferredChannelLabel = $('#preferredChannelLabel');
+
+function setPreferredChannel(channel){
+  const value = String(channel || 'email');
+  if(preferredChannelInput) preferredChannelInput.value = value;
+
+  if(preferredChannelLabel){
+    const labelMap = {
+      email: 'Email',
+      whatsapp: 'WhatsApp',
+      github: 'GitHub',
+      facebook: 'Facebook',
+      x: 'X'
+    };
+    preferredChannelLabel.textContent = labelMap[value] || value;
+  }
+
+  // update aria-checked states
+  $$(`.contact-icon[data-channel]`).forEach(btn => {
+    btn.setAttribute('aria-checked', String(btn.dataset.channel === value));
+  });
+}
 
 function setFieldError(fieldName, message){
   const err = $(`.field-error[data-error-for="${fieldName}"]`);
@@ -353,31 +379,105 @@ function validate(){
   return ok;
 }
 
-form?.addEventListener('submit', (e) => {
+$$('.contact-icon[data-channel]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    setPreferredChannel(btn.dataset.channel);
+  });
+});
+
+setPreferredChannel(preferredChannelInput?.value || 'email');
+
+function getMessagePayload(data){
+  const subject = `[Portfolio] ${data.topic} from ${data.name}`;
+  const body = `Name: ${data.name}\nEmail: ${data.email}\n\nMessage:\n${data.message}`;
+  return { subject, body };
+}
+
+function postToFormspree(endpoint, formData){
+  return fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Accept': 'application/json' },
+    body: formData
+  });
+}
+
+form?.addEventListener('submit', async (e) => {
   e.preventDefault();
   if(!validate()){
-    if(status) status.textContent = 'Please fix the highlighted fields.';
+    if(formStatus) formStatus.textContent = 'Please fix the highlighted fields.';
     return;
   }
 
   const data = Object.fromEntries(new FormData(form).entries());
-  // Demo: create a mailto link instead of backend
-  const subject = encodeURIComponent(`[Portfolio] ${data.topic} from ${data.name}`);
-  const body = encodeURIComponent(`Name: ${data.name}\nEmail: ${data.email}\n\nMessage:\n${data.message}`);
-  const mailto = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
+  const { subject, body } = getMessagePayload(data);
+  const channel = String(data.preferredChannel || 'email');
 
-  if(status){
-    status.textContent = 'Opening your email client…';
+  if(formStatus) formStatus.textContent = 'Sending your message…';
+
+  if(channel === 'email'){
+    const fd = new FormData();
+    fd.append('name', data.name);
+    fd.append('email', data.email);
+    fd.append('topic', data.topic);
+    fd.append('message', data.message);
+    fd.append('subject', subject);
+
+    try{
+      const res = await postToFormspree(FORMSPREE_ENDPOINT, fd);
+      if(!res.ok) throw new Error(`Formspree error: ${res.status}`);
+      if(formStatus) formStatus.textContent = 'Message sent ✅ (check your inbox)';
+      form.reset();
+      setPreferredChannel(preferredChannelInput?.value || 'email');
+    } catch(err){
+      console.error(err);
+      if(formStatus) formStatus.textContent = 'Could not send message. Please try again.';
+    }
+    return;
   }
-  window.location.href = mailto;
-});
 
-$('#fillDemo')?.addEventListener('click', () => {
-  $('#name').value = 'Grace';
-  $('#email').value = 'grace@example.com';
-  $('#topic').value = 'Project inquiry';
-  $('#message').value = 'Hi! I found your portfolio and would love to discuss a web project. Let’s connect.';
-  status && (status.textContent = 'Demo message filled. You can submit now.');
+  // Other channels (best-effort)
+  const encoded = encodeURIComponent(`${subject}\n\n${body}`);
+
+  if(channel === 'whatsapp'){
+    const phoneNumber = '265986498969';
+    const wa = `https://wa.me/${phoneNumber}?text=${encoded}`;
+    if(formStatus) formStatus.textContent = 'Opening WhatsApp…';
+    window.open(wa, '_blank', 'noopener');
+    return;
+  }
+
+  if(channel === 'github'){
+    const url = 'https://github.com/jolps100';
+    if(navigator.clipboard?.writeText){
+      navigator.clipboard.writeText(`${subject}\n\n${body}`).then(()=>{
+        if(formStatus) formStatus.textContent = 'Copied message. Opening GitHub…';
+        window.open(url, '_blank', 'noopener');
+      }).catch(()=>{
+        if(formStatus) formStatus.textContent = 'Opening GitHub…';
+        window.open(url, '_blank', 'noopener');
+      });
+    } else {
+      if(formStatus) formStatus.textContent = 'Opening GitHub…';
+      window.open(url, '_blank', 'noopener');
+    }
+    return;
+  }
+
+  if(channel === 'facebook'){
+    const url = 'https://www.facebook.com/LIMBAN.SNOVAR';
+    if(formStatus) formStatus.textContent = 'Opening Facebook…';
+    window.open(url, '_blank', 'noopener');
+    return;
+  }
+
+  if(channel === 'x'){
+    const intent = `https://twitter.com/intent/tweet?text=${encoded}`;
+    if(formStatus) formStatus.textContent = 'Opening X…';
+    window.open(intent, '_blank', 'noopener');
+    return;
+  }
+
+  if(formStatus) formStatus.textContent = 'Unknown contact method.';
 });
 
 // ----- Footer year -----
